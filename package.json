@@ -1,0 +1,30 @@
+{
+  "name": "nodejsproject",
+  "version": "1.0.0",
+  "description": "This is a Nodejs project for my Daily Task",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon src/app.js",
+    "dev": "nodemon src/app.js",
+    "data:import": "node src/database/seeder/seeder.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "bcrypt": "^6.0.0",
+    "compression": "^1.8.0",
+    "dotenv": "^17.0.1",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.16.1",
+    "node-cache": "^5.1.2",
+    "nodemailer": "^7.0.4",
+    "zod": "^3.25.74"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
