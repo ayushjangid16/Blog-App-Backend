@@ -5,6 +5,8 @@ const {
   login,
   logout,
   refreshAccessToken,
+  resetPasssword,
+  verifyResetPassword,
 } = require("../controllers/authController");
 
 // middlewares
@@ -15,6 +17,7 @@ const {
   registerValidation,
   loginValidation,
   refreshAccessTokenValidation,
+  resetPasswordValidation,
 } = require("../validations/api/authValidation");
 
 const router = express.Router();
@@ -27,4 +30,9 @@ router
   .route("/generate-refresh-token")
   .post(authorize, refreshAccessTokenValidation, refreshAccessToken);
 
-module.exports = router;
+router.route("/reset-password").post(authorize, resetPasssword);
+router
+  .route("/verify-reset-password")
+  .post(authorize, resetPasswordValidation, verifyResetPassword);
+
+http: module.exports = router;

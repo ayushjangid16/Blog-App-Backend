@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const helmet = require("helmet");
+const cors = require("cors");
 const app = express();
 const connectDB = require("./db/db");
 const PORT = process.env.PORT ?? 8000;
@@ -10,6 +11,11 @@ const ApiResponse = require("./utils/ApiResponse");
 
 app.use(express.json());
 app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+  })
+);
 app.use(ApiResponse);
 app.use("/api/auth", authRouter);
 

@@ -2,9 +2,9 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const Role = require("../models/roleModel");
-const nodemailer = require("nodemailer");
 
 const cache = require("../utils/cache");
+const { sendEmail } = require("../utils/sendEmail");
 
 const registerUser = async (req, res) => {
   try {
@@ -39,29 +39,23 @@ const registerUser = async (req, res) => {
     createdUser.refresh_token = refreshToken;
 
     createdUser.save();
+
     // now send this token to user mail
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.GOOGLE_EMAIL,
-        pass: process.env.GOOGLE_PASSWORD,
-      },
-    });
     let url = `http://localhost:8000/api/auth/verify?token=${token}`;
 
     let html = `
     <h2>Please Verfiy Yourself</h2>
     <a href=${url}  style="background-color: #04AA6D; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; text-decoration:none;">Click Me</a>
     `;
-    const info = await transporter.sendMail({
-      from: '"Email Verification"',
-      to: email,
-      subject: "Email Verification",
-      text: "Click the button in order to verify your email",
-      html,
-    });
 
-    return res.success("User created Successfully", createdUser, { token });
+    await sendEmail(
+      "Email Verification",
+      email,
+      "Email Verification",
+      "Click button Inorder to Verify your Email",
+      html
+    );
+    return res.success("User created Successfully", {}, { token });
   } catch (error) {
     console.log(error);
     return res.error("Internal Server Error!", 501);
@@ -117,18 +111,6 @@ const login = async (req, res) => {
     user.refresh_token = refreshToken;
     user.save();
 
-    let option = {
-      httpOnly: true,
-      secure: true,
-    };
-
-    // clear cookies first
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-
-    res.cookie("accessToken", token, option);
-    res.cookie("refreshToken", refreshToken, option);
-
     return res.success("User logged In Successfully", user, { token });
   } catch (error) {
     console.log(error);
@@ -171,10 +153,64 @@ const refreshAccessToken = async (req, res) => {
   });
 };
 
+const resetPasssword = async (req, res) => {
+  try {
+    const user = req.user;
+    const authHeader = req.headers["cookie"];
+
+    const token = authHeader.split(";")[0].split("=")[1];
+
+    let url = `http://localhost:8000/api/auth/verify-reset-password?id=${user._id}&token=${token}`;
+
+    let html = `
+      <h2>Reset Password</h2>
+      <a href=${url}  style="background-color: #04AA6D; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; text-decoration:none;">Click Me</a>
+      `;
+
+    // send the password reset mail to this user
+    await sendEmail(
+      "Password Reset",
+      user.email,
+      "Password Reset Link",
+      "Click the Button in order to Reset your password",
+      html
+    );
+
+    return res.success("Password Reset is Sent over the Mail");
+  } catch (error) {
+    console.log(error);
+    return res.error("Internal Server Error!", 501);
+  }
+};
+
+const verifyResetPassword = async (req, res) => {
+  try {
+    const { id } = req.query;
+    const { password } = req.body;
+
+    const hashPassword = await bcrypt.hash(password, 10);
+
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      {
+        password: hashPassword,
+      },
+      { new: true }
+    ).select("-password -refresh_token");
+
+    return res.success("Password Reset Successfully");
+  } catch (error) {
+    console.log(error);
+    return res.error("Internal Server Error!", 501);
+  }
+};
+
 module.exports = {
   registerUser,
   verifyUser,
   login,
   logout,
   refreshAccessToken,
+  resetPasssword,
+  verifyResetPassword,
 };

@@ -4,36 +4,35 @@ const cache = require("../utils/cache");
 
 const authorize = async (req, res, next) => {
   try {
-    const authHeader = req.headers["cookie"];
+    const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
-      return res.error("Unauthorized Access, Please Login Again", 401);
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.error("Please Provide a Token.", 401);
     }
 
-    const token = authHeader.split(";")[0].split("=")[1];
+    const token = authHeader.split(" ")[1];
 
-    if (cache.get("token") === token) {
-      return res.error("Token Is incorrect");
+    let verified;
+    try {
+      verified = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.error("Invalid or expired token.", 401);
     }
 
-    const verified = jwt.verify(token, process.env.JWT_SECRET);
-    if (!verified) {
-      return res.error("Token was incorrect");
-    }
-
-    const userId = verified._id;
-    const user = await User.findOne({ _id: userId, isDeleted: false });
+    const user = await User.findOne({
+      _id: verified._id,
+      isDeleted: false,
+    }).select("-password -refresh_token");
 
     if (!user) {
-      return res.errror("Token Was Incorrect");
+      return res.error("User not found or deleted.", 404);
     }
 
     req.user = user;
-
     next();
   } catch (error) {
-    console.log(error);
-    return res.error("Internal Server Error", 501);
+    console.error("Authorization Error:", error);
+    return res.error("Internal Server Error", 500);
   }
 };
 
