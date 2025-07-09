@@ -3,70 +3,118 @@ const Role = require("../../models/roleModel");
 const RoleWithPermission = require("../../models/rolePermissionModel");
 const User = require("../../models/userModel");
 const { faker } = require("@faker-js/faker");
+const bcrypt = require("bcrypt");
+
+const allValidPermissions = [
+  // Dashboard
+  {
+    name: "Access Dashboard",
+    username: "access_dashboard",
+    module: "Dashboard",
+  },
+
+  // Profile
+  { name: "Access Profile", username: "access_profile", module: "Profile" },
+  { name: "Edit Profile", username: "edit_profile", module: "Profile" },
+  { name: "Delete Profile", username: "delete_profile", module: "Profile" },
+
+  // Platform User Management (Admin only)
+  {
+    name: "Access Platform User",
+    username: "access_platform_user",
+    module: "Platform User",
+  },
+  {
+    name: "Create Platform User",
+    username: "create_platform_user",
+    module: "Platform User",
+  },
+  {
+    name: "Edit Platform User",
+    username: "edit_platform_user",
+    module: "Platform User",
+  },
+  {
+    name: "View Platform User",
+    username: "view_platform_user",
+    module: "Platform User",
+  },
+  {
+    name: "Delete Platform User",
+    username: "delete_platform_user",
+    module: "Platform User",
+  },
+
+  // Writer Role Management
+  {
+    name: "Request Writer Role",
+    username: "request_writer_role",
+    module: "Writer Role",
+  },
+  {
+    name: "Approve Writer Request",
+    username: "approve_writer_request",
+    module: "Writer Role",
+  },
+  {
+    name: "Reject Writer Request",
+    username: "reject_writer_request",
+    module: "Writer Role",
+  },
+  {
+    name: "Revoke Writer Role",
+    username: "revoke_writer_role",
+    module: "Writer Role",
+  },
+
+  // Blog Posts (Writer)
+  { name: "Create Blog", username: "create_blog", module: "Blog" },
+  { name: "Edit Blog", username: "edit_blog", module: "Blog" },
+  { name: "Delete Blog", username: "delete_blog", module: "Blog" },
+  { name: "View Blog", username: "view_blog", module: "Blog" },
+];
+
+
+
 
 const createPermissions = async () => {
-  const allValidPermissions = [
-    { name: "Full Access", username: "full_access", module: "Admin" },
-    { name: "Edit Profile", username: "edit_profile", module: "User" },
-    { name: "Delete Profile", username: "delete_profile", module: "User" },
-  ];
-
+  await Permission.deleteMany({});
   return Permission.insertMany(allValidPermissions);
 };
 
-const createRoles = async (count = 3) => {
-  let roles = [];
-  for (let i = 0; i < count; i++) {
-    let name;
-    if (i == 0) {
-      name = "Admin";
-    } else if (i == 1) {
-      name = "Writter";
-    } else {
-      name = "User";
-    }
-    let obj = { name };
-    roles.push(obj);
-  }
-
+const createRoles = async () => {
+  await Role.deleteMany({});
+  const roles = [
+    { name: "Admin", username: "admin" },
+    { name: "Writter", username: "writter" },
+    { name: "User", username: "user" },
+  ];
   return Role.insertMany(roles);
 };
 
-const createUsers = (allRoles) => {
-  const adminUser = allRoles.find((role) => role.name == "Admin");
-  const userRole = allRoles.find((role) => role.name == "User");
-  const writterRole = allRoles.find((role) => role.name == "Writter");
-  let users = [
-    {
-      first_name: "Admin",
-      last_name: "User",
-      password: "Temp",
-      phone_number: faker.phone.number().toString(),
-      role_id: adminUser._id,
-    },
-    {
-      first_name: faker.person.firstName().toString(),
-      last_name: faker.person.lastName().toString(),
-      password: faker.person.fullName().toString(),
-      phone_number: faker.phone.number().toString(),
-      role_id: userRole._id,
-    },
-    {
-      first_name: faker.person.firstName().toString(),
-      last_name: faker.person.lastName().toString(),
-      password: faker.person.fullName().toString(),
-      phone_number: faker.phone.number().toString(),
-      role_id: writterRole._id,
-    },
-  ];
+const createUsers = async (allRoles) => {
+  await User.deleteMany({});
+  const adminRole = allRoles.find((r) => r.name === "Admin");
 
-  return User.insertMany(users);
+  let hashPass = await bcrypt.hash("Admin@123", 10);
+
+  const adminUser = {
+    first_name: "Admin",
+    last_name: "User",
+    email: "ayush.jangid@helpfulinsightsolution.com",
+    refresh_token: "",
+    password: hashPass,
+    isVerified: true,
+    phone_number: faker.phone.number().toString(),
+    role_id: adminRole._id,
+  };
+
+  return User.create(adminUser);
 };
 
 const assignPermission = (roleName, perm, roles, permissions) => {
-  const currRole = roles.find((r) => r.name == roleName);
-  const currPerm = permissions.find((p) => p.username == perm);
-
+  const currRole = roles.find((r) => r.name === roleName);
+  const currPerm = permissions.find((p) => p.username === perm);
   return {
     role: currRole._id,
     permission: currPerm._id,
@@ -74,15 +122,17 @@ const assignPermission = (roleName, perm, roles, permissions) => {
 };
 
 const createRoleWithPermission = async (allRoles, allPermissions) => {
-  // assign admin permission
-  let roleWithPermission = [];
-  for (const perm of allPermissions) {
-    if (perm.username == "full_access") {
-      roleWithPermission.push(
-        assignPermission("Admin", perm.username, allRoles, allPermissions)
-      );
-    }
-  }
+  await RoleWithPermission.deleteMany({});
+
+  const adminRole = allRoles.find((r) => r.name === "Admin");
+
+  // this is assigning all the permissions to admin role
+  const roleWithPermission = allPermissions.map((perm) => ({
+    role: adminRole._id,
+    permission: perm._id,
+  }));
+
+  // writer 
 
   return RoleWithPermission.insertMany(roleWithPermission);
 };

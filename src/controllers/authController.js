@@ -5,6 +5,29 @@ const Role = require("../models/roleModel");
 
 const cache = require("../utils/cache");
 const { sendEmail } = require("../utils/sendEmail");
+const RoleWithPermission = require("../models/rolePermissionModel");
+const Permission = require("../models/permissionModel");
+
+const getRolePermissions = async (roleId) => {
+  try {
+    const rolePermissions = await RoleWithPermission.find({
+      role: roleId,
+      isDeleted: false,
+    }).populate({
+      path: "permission",
+      select: "name username isDeleted",
+    });
+
+    const permissions = rolePermissions
+      .filter((rp) => rp.permission)
+      .map((rp) => rp.permission);
+
+    return permissions;
+  } catch (error) {
+    console.error("Error fetching role permissions:", error);
+    throw error;
+  }
+};
 
 const registerUser = async (req, res) => {
   try {
@@ -93,25 +116,44 @@ const login = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const user = await User.findOne({ email, isDeleted: false }).select(
-      "-password -refresh_token"
-    );
+    // Fetch user and populate role
+    const user = await User.findOne({
+      email,
+      isDeleted: false,
+    }).populate({
+      path: "role_id",
+      select: "name username isDeleted",
+    });
 
-    // now password is correct gave back the token
+    if (!user) {
+      return res.error("User not found", 404);
+    }
+
+    const userPermissions = await getRolePermissions(user.role_id._id);
+
+    // Generate tokens
     const userData = { email, _id: user._id };
     const token = jwt.sign(userData, process.env.JWT_SECRET, {
       expiresIn: "20m",
     });
 
-    // generate refresh token too
     const refreshToken = jwt.sign(userData, process.env.JWT_REFRESH_SECRET, {
       expiresIn: "20d",
     });
 
     user.refresh_token = refreshToken;
-    user.save();
+    await user.save();
 
-    return res.success("User logged In Successfully", user, { token });
+    // Convert to plain object and remove sensitive fields
+    const userObj = user.toObject();
+    delete userObj.password;
+    delete userObj.refresh_token;
+
+    return res.success(
+      "User logged In Successfully",
+      { userInfo: userObj, permissions: userPermissions },
+      { token }
+    );
   } catch (error) {
     console.log(error);
     return res.error("Internal Server Error!", 501);
@@ -155,12 +197,26 @@ const refreshAccessToken = async (req, res) => {
 
 const resetPasssword = async (req, res) => {
   try {
-    const user = req.user;
-    const authHeader = req.headers["cookie"];
+    const { email } = req.body;
 
-    const token = authHeader.split(";")[0].split("=")[1];
+    if (!email) {
+      return res.error("Provide the Email", 401);
+    }
 
-    let url = `http://localhost:8000/api/auth/verify-reset-password?id=${user._id}&token=${token}`;
+    const user = await User.findOne({ email, isDeleted: false });
+    if (!user) {
+      return res.error("Email do not Exists", 404);
+    }
+
+    let token = jwt.sign(
+      { email },
+      process.env.JWT_PASSWORD_RESET_TOKEN_SECRET,
+      {
+        expiresIn: "5m",
+      }
+    );
+
+    let url = `${process.env.CLIENT_URL}/verify-reset-password?token=${token}`;
 
     let html = `
       <h2>Reset Password</h2>
@@ -170,7 +226,7 @@ const resetPasssword = async (req, res) => {
     // send the password reset mail to this user
     await sendEmail(
       "Password Reset",
-      user.email,
+      email,
       "Password Reset Link",
       "Click the Button in order to Reset your password",
       html
@@ -185,13 +241,16 @@ const resetPasssword = async (req, res) => {
 
 const verifyResetPassword = async (req, res) => {
   try {
-    const { id } = req.query;
+    // const { id } = req.query;
     const { password } = req.body;
 
     const hashPassword = await bcrypt.hash(password, 10);
+    let { token } = req.query;
+    let data = jwt.verify(token, process.env.JWT_PASSWORD_RESET_TOKEN_SECRET);
+    let email = data.email;
 
     const updatedUser = await User.findOneAndUpdate(
-      { _id: id, isDeleted: false },
+      { email, isDeleted: false },
       {
         password: hashPassword,
       },

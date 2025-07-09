@@ -30,9 +30,9 @@ router
   .route("/generate-refresh-token")
   .post(authorize, refreshAccessTokenValidation, refreshAccessToken);
 
-router.route("/reset-password").post(authorize, resetPasssword);
+router.route("/reset-password").post(resetPasssword);
 router
   .route("/verify-reset-password")
-  .post(authorize, resetPasswordValidation, verifyResetPassword);
+  .post(resetPasswordValidation, verifyResetPassword);
 
 http: module.exports = router;

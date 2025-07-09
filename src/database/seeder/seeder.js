@@ -11,11 +11,10 @@ const {
 const Permission = require("../../models/permissionModel");
 const Role = require("../../models/roleModel");
 const RoleWithPermission = require("../../models/rolePermissionModel");
-fg
+
 const start = async () => {
   try {
     await connectDB(process.env.MONGO_URI);
-    
 
     await Permission.deleteMany({});
     let perm = await createPermissions();

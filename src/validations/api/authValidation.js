@@ -64,6 +64,11 @@ const loginValidation = async (req, res, next) => {
     return res.error("User Not Found", 404, error);
   }
 
+  if (!user.isVerified) {
+    error["Verification"] = "User is not Verified";
+    return res.error("Mail for Verification is sent over mail.", 401, error);
+  }
+
   const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) {
     error["Password"] = "Password incorrect";
@@ -121,7 +126,18 @@ const resetPasswordValidation = async (req, res, next) => {
   const { password, confirmPassword } = req.body;
   const result = schema.safeParse({ password, confirmPassword });
 
+  const { token } = req.query;
+
   let error = {};
+
+  let verified;
+  try {
+    verified = jwt.verify(token, process.env.JWT_PASSWORD_RESET_TOKEN_SECRET);
+  } catch (er) {
+    error["Message"] = "Unautorized Access!";
+    return res.error("Invalid Token", 401, error);
+  }
+
   if (!result.success) {
     result.error.errors.forEach((er) => {
       error[er.path[0]] = er.message;
@@ -130,14 +146,13 @@ const resetPasswordValidation = async (req, res, next) => {
   }
 
   if (password !== confirmPassword) {
-    error["Message"] = "Password and Confirm Password do not match!";
     return res.error("Validation Error", 400, error);
   }
 
-  const { id } = req.query;
-  const user = await User.findOne({ _id: id, isDeleted: false }).select(
-    "-refresh_token"
-  );
+  const user = await User.findOne({
+    email: verified.email,
+    isDeleted: false,
+  }).select("-refresh_token");
 
   if (!user) {
     error["User"] = "User not found!";
