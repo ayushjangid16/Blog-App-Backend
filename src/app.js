@@ -7,6 +7,7 @@ const connectDB = require("./db/db");
 const PORT = process.env.PORT ?? 8000;
 
 const authRouter = require("./routes/authRoute");
+const requestRouter = require("./routes/requestRoute");
 const ApiResponse = require("./utils/ApiResponse");
 
 app.use(express.json());
@@ -18,6 +19,7 @@ app.use(
 );
 app.use(ApiResponse);
 app.use("/api/auth", authRouter);
+app.use("/api/request", requestRouter);
 
 const start = async () => {
   try {

@@ -74,9 +74,6 @@ const allValidPermissions = [
   { name: "View Blog", username: "view_blog", module: "Blog" },
 ];
 
-
-
-
 const createPermissions = async () => {
   await Permission.deleteMany({});
   return Permission.insertMany(allValidPermissions);
@@ -132,9 +129,22 @@ const createRoleWithPermission = async (allRoles, allPermissions) => {
     permission: perm._id,
   }));
 
-  // writer 
+  // User
+  const userRole = allRoles.find((r) => r.name === "User");
+  const writterPermission = allPermissions.find(
+    (per) => per.username == "request_writer_role"
+  );
+  const userRoleWithPermission = [
+    {
+      role: userRole._id,
+      permission: writterPermission._id,
+    },
+  ];
 
-  return RoleWithPermission.insertMany(roleWithPermission);
+  return RoleWithPermission.insertMany([
+    ...roleWithPermission,
+    ...userRoleWithPermission,
+  ]);
 };
 
 module.exports = {
