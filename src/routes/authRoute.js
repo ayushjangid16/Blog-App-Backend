@@ -35,4 +35,4 @@ router
   .route("/verify-reset-password")
   .post(resetPasswordValidation, verifyResetPassword);
 
-http: module.exports = router;
+module.exports = router;

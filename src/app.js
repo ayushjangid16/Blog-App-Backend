@@ -6,20 +6,21 @@ const app = express();
 const connectDB = require("./db/db");
 const PORT = process.env.PORT ?? 8000;
 
-const authRouter = require("./routes/authRoute");
-const requestRouter = require("./routes/requestRoute");
+const router = require("./routes/index");
 const ApiResponse = require("./utils/ApiResponse");
 
 app.use(express.json());
+app.use(express.static("public"));
+
 app.use(helmet());
+
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
   })
 );
 app.use(ApiResponse);
-app.use("/api/auth", authRouter);
-app.use("/api/request", requestRouter);
+app.use("/api", router);
 
 const start = async () => {
   try {

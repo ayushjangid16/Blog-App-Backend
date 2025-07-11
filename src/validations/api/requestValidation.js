@@ -79,12 +79,13 @@ const createRequestValidation = async (req, res, next) => {
     return res.error("Invalid Request", 401, error);
   }
 
-  const requestRecord = await Request.findOne({
+  const requestRecord = await Request.find({
     user_id: userId,
     isDeleted: false,
   });
   if (requestRecord) {
-    if (requestRecord.status == "pending") {
+    let pending = requestRecord.find((req) => req.status === "pending");
+    if (pending) {
       error["Duplicate"] = "You already have an Pending Request";
       return res.error("Already have pending Request", 404, error);
     }
@@ -126,11 +127,6 @@ const approveRequestValidation = async (req, res, next) => {
     _id: requestRecord.user_id,
     isDeleted: false,
   }).populate("role_id", "name username");
-
-  if (user.role_id.username != "admin") {
-    error["Invalid"] = "Invalid Request";
-    return res.error("Invalid Request", 401, error);
-  }
 
   // request is already accepted
   if (requestRecord.status === "accepted") {
@@ -181,11 +177,6 @@ const rejectRequestValidation = async (req, res, next) => {
     _id: requestRecord.user_id,
     isDeleted: false,
   }).populate("role_id", "name username");
-
-  if (user.role_id.username != "admin") {
-    error["Invalid"] = "Invalid Request";
-    return res.error("Invalid Request", 401, error);
-  }
 
   // request is already accepted
   if (requestRecord.status === "accepted") {

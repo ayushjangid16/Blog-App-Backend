@@ -70,7 +70,10 @@ const rejectRequest = async (req, res) => {
 
 const getAllRequests = async (req, res) => {
   try {
-    const allRequests = await Request.find({ isDeleted: false });
+    const allRequests = await Request.find({
+      status: "pending",
+      isDeleted: false,
+    }).populate("user_id", "first_name last_name");
 
     return res.success("All Requests", allRequests);
   } catch (error) {
