@@ -72,6 +72,7 @@ const allValidPermissions = [
   { name: "Edit Blog", username: "edit_blog", module: "Blog" },
   { name: "Delete Blog", username: "delete_blog", module: "Blog" },
   { name: "View Blog", username: "view_blog", module: "Blog" },
+  { name: "View All Blogs", username: "view_all_blogs", module: "Blog" },
 ];
 
 const createPermissions = async () => {
@@ -134,10 +135,19 @@ const createRoleWithPermission = async (allRoles, allPermissions) => {
   const writterPermission = allPermissions.find(
     (per) => per.username == "request_writer_role"
   );
+
+  const viewAllBlogsPermission = allPermissions.find(
+    (per) => per.username === "view_all_blogs"
+  );
+
   const userRoleWithPermission = [
     {
       role: userRole._id,
       permission: writterPermission._id,
+    },
+    {
+      role: userRole._id,
+      permission: viewAllBlogsPermission._id,
     },
   ];
 

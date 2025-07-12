@@ -1,29 +1,6 @@
 const zod = require("zod");
-const User = require("../../models/userModel");
-const RoleWithPermission = require("../../models/rolePermissionModel");
 const jwt = require("jsonwebtoken");
 const Request = require("../../models/requestModel");
-
-const getRolePermissions = async (roleId) => {
-  try {
-    const rolePermissions = await RoleWithPermission.find({
-      role: roleId,
-      isDeleted: false,
-    }).populate({
-      path: "permission",
-      select: "name username isDeleted",
-    });
-
-    const permissions = rolePermissions
-      .filter((rp) => rp.permission)
-      .map((rp) => rp.permission);
-
-    return permissions;
-  } catch (error) {
-    console.error("Error fetching role permissions:", error);
-    throw error;
-  }
-};
 
 const createRequestValidation = async (req, res, next) => {
   const schema = zod.object({
@@ -51,32 +28,6 @@ const createRequestValidation = async (req, res, next) => {
       error[er.path[0]] = er.message;
     });
     return res.error("Validation Error", 400, error);
-  }
-
-  // check if admin or not
-  const user = await User.findOne({ _id: userId, isDeleted: false })
-    .select("-password -refresh_token")
-    .populate("role_id", "name username");
-
-  if (!user) {
-    error["Not Found"] = "User Not Found";
-    return res.error("User Not Found", 404, error);
-  }
-
-  if (user.role_id.username == "admin" || user.role_id.username == "writter") {
-    error["Invalid"] = "Invalid Request";
-    return res.error("Invalid Request", 404, error);
-  }
-
-  const userPermissions = await getRolePermissions(user.role_id._id);
-
-  const hasPermission = userPermissions.find(
-    (obj) => obj.username == "request_writer_role"
-  );
-
-  if (!hasPermission) {
-    error["Invalid"] = "Invalid Request";
-    return res.error("Invalid Request", 401, error);
   }
 
   const requestRecord = await Request.find({
@@ -123,11 +74,6 @@ const approveRequestValidation = async (req, res, next) => {
     return res.error("Request Not Found", 404, error);
   }
 
-  const user = await User.findOne({
-    _id: requestRecord.user_id,
-    isDeleted: false,
-  }).populate("role_id", "name username");
-
   // request is already accepted
   if (requestRecord.status === "accepted") {
     error["Validation Error"] = "Request Already Accepted";
@@ -172,11 +118,6 @@ const rejectRequestValidation = async (req, res, next) => {
     error["Request"] = "Request Not Found";
     return res.error("Request Not Found", 404, error);
   }
-
-  const user = await User.findOne({
-    _id: requestRecord.user_id,
-    isDeleted: false,
-  }).populate("role_id", "name username");
 
   // request is already accepted
   if (requestRecord.status === "accepted") {

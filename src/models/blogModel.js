@@ -18,23 +18,33 @@ const blogSchema = new mongoose.Schema(
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      // required: true,
+      default: null,
     },
-    files: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "File",
-        required: true,
-      },
-    ],
     isDeleted: {
       type: Boolean,
       default: false,
       required: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toObject: {
+      virtuals: true,
+    },
+    toJSON: {
+      virtuals: true,
+    },
+  }
 );
+
+blogSchema.virtual("files", {
+  ref: "File",
+  localField: "_id",
+  foreignField: "uploadsable_id",
+  justOne: false,
+  match: { uploadsable_type: "Blog" },
+});
 
 const Blog = mongoose.model("Blog", blogSchema);
 

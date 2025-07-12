@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const helmet = require("helmet");
+const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
 const connectDB = require("./db/db");
@@ -10,8 +11,8 @@ const router = require("./routes/index");
 const ApiResponse = require("./utils/ApiResponse");
 
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static("public"));
-
 app.use(helmet());
 
 app.use(

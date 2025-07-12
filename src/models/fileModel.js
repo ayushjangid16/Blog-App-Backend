@@ -1,11 +1,13 @@
 const mongoose = require("mongoose");
 
-// uploadsable_id -> id of from where it is uploaded (UserProfile / Blog)
+// uploadsable_id ->
 // uploadsable_type -> UserProfile / Blog
 // file_path -> path of file
 // original_file_name -> name of file
 // type -> UserProfile / Blog
 // file_type -> image/jpeg
+
+// blog -> files(blogId)
 
 const fileSchema = new mongoose.Schema(
   {
@@ -16,6 +18,11 @@ const fileSchema = new mongoose.Schema(
     uploadsable_type: {
       type: String,
       required: true,
+    },
+    url: {
+      type: String,
+      required: true,
+      default: null,
     },
     file_path: {
       type: String,

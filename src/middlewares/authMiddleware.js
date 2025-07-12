@@ -1,8 +1,30 @@
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const cache = require("../utils/cache");
+const RoleWithPermission = require("../models/rolePermissionModel");
 
-const authorize = async (req, res, next) => {
+const getRolePermissions = async (roleId) => {
+  try {
+    const rolePermissions = await RoleWithPermission.find({
+      role: roleId,
+      isDeleted: false,
+    }).populate({
+      path: "permission",
+      select: "name username isDeleted",
+    });
+
+    const permissions = rolePermissions
+      .filter((rp) => rp.permission)
+      .map((rp) => rp.permission);
+
+    return permissions;
+  } catch (error) {
+    console.error("Error fetching role permissions:", error);
+    throw error;
+  }
+};
+
+const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -22,12 +44,17 @@ const authorize = async (req, res, next) => {
     const user = await User.findOne({
       _id: verified._id,
       isDeleted: false,
-    }).select("-password -refresh_token");
-
+    })
+      .select("-password -refresh_token")
+      .populate("role_id", "name username");
     if (!user) {
       return res.error("User not found or deleted.", 404);
     }
 
+    const allPermissions = getRolePermissions(user.role_id._id);
+
+    req.permissions = allPermissions;
+    req.role = user.role_id.username;
     req.user = user;
     next();
   } catch (error) {
@@ -36,4 +63,4 @@ const authorize = async (req, res, next) => {
   }
 };
 
-module.exports = { authorize };
+module.exports = { authenticate };
