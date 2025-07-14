@@ -18,4 +18,4 @@ const transformBlogCollection = (blogs) => {
   return blogs.map(transformBlog);
 };
 
-module.exports = { transformBlogCollection };
+module.exports = { transformBlogCollection, transformBlog };

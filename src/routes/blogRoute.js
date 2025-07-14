@@ -7,6 +7,7 @@ const {
   deleteBlog,
   singleBlog,
   allBlogs,
+  allBlogsOfUser,
 } = require("../controllers/blogController");
 const upload = require("../middlewares/fileUpload");
 const { authenticate } = require("../middlewares/authMiddleware");
@@ -31,5 +32,9 @@ router
 router.route("/all").get(authenticate, authorize("view_all_blogs"), allBlogs);
 
 router.route("/single").get(authenticate, authorize("view_blog"), singleBlog);
+
+router
+  .route("/user/all")
+  .get(authenticate, authorize("view_all_blogs"), allBlogsOfUser);
 
 module.exports = router;

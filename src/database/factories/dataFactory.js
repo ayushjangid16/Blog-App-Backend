@@ -132,6 +132,14 @@ const createRoleWithPermission = async (allRoles, allPermissions) => {
 
   // User
   const userRole = allRoles.find((r) => r.name === "User");
+
+  // writer
+  const writerRole = allRoles.find((r) => r.username === "writter");
+
+  const allWritterPermissions = allPermissions.filter(
+    (per) => per.module === "Blog"
+  );
+
   const writterPermission = allPermissions.find(
     (per) => per.username == "request_writer_role"
   );
@@ -151,9 +159,17 @@ const createRoleWithPermission = async (allRoles, allPermissions) => {
     },
   ];
 
+  const writterRoleWithPermission = allWritterPermissions.map((perm) => {
+    return {
+      role: writerRole._id,
+      permission: perm._id,
+    };
+  });
+
   return RoleWithPermission.insertMany([
     ...roleWithPermission,
     ...userRoleWithPermission,
+    ...writterRoleWithPermission,
   ]);
 };
 

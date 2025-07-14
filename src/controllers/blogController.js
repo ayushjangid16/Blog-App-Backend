@@ -1,7 +1,12 @@
 const Blog = require("../models/blogModel");
 const File = require("../models/fileModel");
-const { transformBlogCollection } = require("../transformers/blogTransformer");
+const {
+  transformBlogCollection,
+  transformBlog,
+} = require("../transformers/blogTransformer");
 const fs = require("fs").promises;
+
+const slugify = require("slugify");
 
 const deleteFile = async (file) => {
   if (file?.path) {
@@ -20,8 +25,13 @@ const createBlog = async (req, res) => {
   const { title, description } = req.body;
 
   try {
+    let slug = slugify(title, {
+      replacement: "_",
+      lower: true,
+    });
     const blog = await Blog.create({
       title,
+      slug,
       description,
       createdBy: req.user._id,
     });
@@ -50,14 +60,57 @@ const createBlog = async (req, res) => {
 };
 
 const editBlog = async (req, res) => {
-  res.send("Editting blog");
+  const { title, description, id, userId } = req.body;
+
+  if (!id) {
+    return res.error("Blog Id is Missing.");
+  }
+
+  if (!userId) {
+    return res.error("Invalid Request.");
+  }
+
+  if (!title && !description) {
+    return res.error("Title and Description Both are missing");
+  }
+
+  const blog = await Blog.findOne({
+    _id: id,
+    isDeleted: false,
+    createdBy: userId,
+  });
+
+  if (!blog) {
+    return res.error("Invalid Request");
+  }
+
+  const toUpdateData = {};
+
+  if (title) {
+    toUpdateData.title = slugify(title, {
+      replacement: "_",
+      lower: true,
+    });
+  }
+
+  if (description) {
+    toUpdateData.description = description;
+  }
+
+  const updatedBlog = await Blog.findOneAndUpdate(
+    { _id: id, isDeleted: false, createdBy: userId },
+    toUpdateData,
+    { new: true }
+  ).populate("files");
+
+  return res.success("Blog Edited Successfully", transformBlog(updatedBlog));
 };
 
 const allBlogs = async (req, res) => {
   try {
     let {
       page = 0,
-      limit = 5,
+      limit = 10,
       search = "",
       sort = "asc",
       sortBy = "createdAt",
@@ -70,6 +123,7 @@ const allBlogs = async (req, res) => {
 
     const filter = {
       title: { $regex: search, $options: "i" },
+      isDeleted: false,
     };
 
     const total = await Blog.countDocuments(filter);
@@ -92,26 +146,72 @@ const allBlogs = async (req, res) => {
   }
 };
 
+const allBlogsOfUser = async (req, res) => {
+  try {
+    const id = req.user._id;
+    let { page = 0, limit = 5, search = "" } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const filter = {
+      title: { $regex: search, $options: "i" },
+      isDeleted: false,
+    };
+
+    const allBlogs = await Blog.find(filter)
+      .skip(page * limit)
+      .limit(limit)
+      .populate("files");
+
+    return res.success("All Blogs", {
+      blogs: transformBlogCollection(allBlogs),
+    });
+  } catch (error) {
+    return res.error("Internal Server Error");
+  }
+};
+
 const deleteBlog = async (req, res) => {
-  res.send("deleting Blog");
+  try {
+    const { id, userId } = req.query;
+
+    if (!id || !userId) {
+      return res.error("Invalid Request");
+    }
+
+    const blog = await Blog.findOne({
+      _id: id,
+      isDeleted: false,
+      createdBy: userId,
+    });
+
+    if (!blog) {
+      return res.error("Invalid Request");
+    }
+
+    const deletedBlog = await Blog.findOneAndUpdate(
+      { _id: id, isDeleted: false, createdBy: userId },
+      {
+        isDeleted: true,
+      }
+    );
+
+    return res.success("Blog Deleted Successfully");
+  } catch (error) {
+    console.log("Error Deleting ", error);
+    return res.error("Internal Sever Error");
+  }
 };
 
 const singleBlog = async (req, res) => {
   try {
     const { id } = req.query;
-
-    if (!id) return res.error("Invalid Request");
-
     const blog = await Blog.findOne({ _id: id, isDeleted: false }).populate(
       "files"
     );
 
-    const allBlogs = [];
-    allBlogs.push(blog);
-
-    return res.success("Blog Fetched Successfully", {
-      blog: transformBlogCollection(allBlogs)[0],
-    });
+    return res.success("Blog Fetched Successfully", transformBlog(blog));
   } catch (error) {
     console.error("Error in fetching blog:", error);
     return res.error("Internal Server Error");
@@ -124,4 +224,5 @@ module.exports = {
   deleteBlog,
   allBlogs,
   singleBlog,
+  allBlogsOfUser,
 };

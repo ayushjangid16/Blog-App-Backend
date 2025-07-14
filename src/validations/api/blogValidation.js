@@ -16,12 +16,11 @@ const createBlogValidation = async (req, res, next) => {
   const schema = zod.object({
     title: zod
       .string()
-      .min(10, "Title Should be of atleast 10 Characters")
+      .min(5, "Title Should be of atleast 5 Characters")
       .max(30, "Title Cannot Exceed length of 30"),
     description: zod
       .string()
-      .min(10, "Description Should be of atleast 10 Characters")
-      .max(2000, "Descrption Cannot exceed Length of 2000."),
+      .min(10, "Description Should be of atleast 10 Characters"),
   });
 
   const result = schema.safeParse(req.body);
@@ -47,6 +46,23 @@ const createBlogValidation = async (req, res, next) => {
   next();
 };
 
+const getSingleBlogValidation = async (req, res, next) => {
+  const { id } = req.query;
+
+  if (!id) return res.error("Invalid Request");
+
+  const blog = await Blog.findOne({ _id: id, isDeleted: false }).populate(
+    "files"
+  );
+
+  if (!blog) {
+    return res.error("No Blog found.");
+  }
+
+  next();
+};
+
 module.exports = {
   createBlogValidation,
+  getSingleBlogValidation,
 };
