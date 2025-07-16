@@ -4,20 +4,9 @@ const {
   transformBlogCollection,
   transformBlog,
 } = require("../transformers/blogTransformer");
-const fs = require("fs").promises;
 
 const slugify = require("slugify");
-
-const deleteFile = async (file) => {
-  if (file?.path) {
-    try {
-      await fs.unlink(file.path);
-      console.log(`Deleted file: ${file.path}`);
-    } catch (err) {
-      console.error(`Failed to delete file: ${file.path}`, err);
-    }
-  }
-};
+const { deleteFile } = require("../utils/deleteFile");
 
 const createBlog = async (req, res) => {
   const blogFiles = req.files || [];
@@ -60,19 +49,17 @@ const createBlog = async (req, res) => {
 };
 
 const editBlog = async (req, res) => {
-  const { title, description, id, userId } = req.body;
+  const { title, description, id } = req.body;
 
   if (!id) {
     return res.error("Blog Id is Missing.");
   }
 
-  if (!userId) {
-    return res.error("Invalid Request.");
-  }
-
   if (!title && !description) {
     return res.error("Title and Description Both are missing");
   }
+
+  const userId = req.user._id;
 
   const blog = await Blog.findOne({
     _id: id,
@@ -87,7 +74,8 @@ const editBlog = async (req, res) => {
   const toUpdateData = {};
 
   if (title) {
-    toUpdateData.title = slugify(title, {
+    toUpdateData.title = title;
+    toUpdateData.slug = slugify(title, {
       replacement: "_",
       lower: true,
     });
@@ -157,6 +145,7 @@ const allBlogsOfUser = async (req, res) => {
     const filter = {
       title: { $regex: search, $options: "i" },
       isDeleted: false,
+      createdBy: id,
     };
 
     const allBlogs = await Blog.find(filter)
@@ -174,9 +163,10 @@ const allBlogsOfUser = async (req, res) => {
 
 const deleteBlog = async (req, res) => {
   try {
-    const { id, userId } = req.query;
+    const { id } = req.query;
+    const userId = req.user._id;
 
-    if (!id || !userId) {
+    if (!id) {
       return res.error("Invalid Request");
     }
 

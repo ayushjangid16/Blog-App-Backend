@@ -7,6 +7,10 @@ const cache = require("../utils/cache");
 const { sendEmail } = require("../utils/sendEmail");
 const RoleWithPermission = require("../models/rolePermissionModel");
 const Permission = require("../models/permissionModel");
+const {
+  verifyEmailTemplate,
+  resetPasswordTemplate,
+} = require("../utils/EmailTemplate");
 
 const getRolePermissions = async (roleId) => {
   try {
@@ -66,10 +70,7 @@ const registerUser = async (req, res) => {
     // now send this token to user mail
     let url = `http://localhost:8000/api/auth/verify?token=${token}`;
 
-    let html = `
-    <h2>Please Verfiy Yourself</h2>
-    <a href=${url}  style="background-color: #04AA6D; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; text-decoration:none;">Click Me</a>
-    `;
+    let html = verifyEmailTemplate(url);
 
     await sendEmail(
       "Email Verification",
@@ -218,10 +219,7 @@ const resetPasssword = async (req, res) => {
 
     let url = `${process.env.CLIENT_URL}/verify-reset-password?token=${token}`;
 
-    let html = `
-      <h2>Reset Password</h2>
-      <a href=${url}  style="background-color: #04AA6D; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; text-decoration:none;">Click Me</a>
-      `;
+    let html = resetPasswordTemplate(url);
 
     // send the password reset mail to this user
     await sendEmail(

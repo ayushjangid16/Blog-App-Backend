@@ -1,6 +1,11 @@
 const Request = require("../models/requestModel");
 const Role = require("../models/roleModel");
 const User = require("../models/userModel");
+const {
+  requestApprovedTemplate,
+  requestRejectedTemplate,
+} = require("../utils/EmailTemplate");
+const { sendEmail } = require("../utils/sendEmail");
 
 const createRequest = async (req, res) => {
   try {
@@ -43,7 +48,16 @@ const approveRequest = async (req, res) => {
       },
       { new: true }
     );
+    let name = userRecord.first_name + " " + userRecord.last_name;
+    let html = requestApprovedTemplate(name, "Writter");
 
+    await sendEmail(
+      "Request Approved",
+      userRecord.email,
+      "Request Approved",
+      "Congratulations!",
+      html
+    );
     return res.success("Request Approved");
   } catch (error) {
     return res.error("Internal Server Error", 501);
@@ -60,6 +74,22 @@ const rejectRequest = async (req, res) => {
         status: "rejected",
       },
       { new: true }
+    );
+
+    const userRecord = await User.findOne({
+      _id: requestRecord.user_id,
+      isDeleted: false,
+    });
+
+    let name = userRecord.first_name + " " + userRecord.last_name;
+    let html = requestRejectedTemplate(name, "Writter");
+
+    await sendEmail(
+      "Request Rejected",
+      userRecord.email,
+      "Request Rejected",
+      "Request Rejected!",
+      html
     );
 
     return res.success("Request Rejected");

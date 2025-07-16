@@ -4,7 +4,7 @@ const helmet = require("helmet");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
-const connectDB = require("./db/db");
+const connectDB = require("./config/db/db");
 const PORT = process.env.PORT ?? 8000;
 
 const router = require("./routes/index");
