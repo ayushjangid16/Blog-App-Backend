@@ -51,6 +51,20 @@ blogSchema.virtual("files", {
   match: { uploadsable_type: "Blog" },
 });
 
+blogSchema.virtual("likes", {
+  ref: "Like",
+  localField: "_id",
+  foreignField: "blogId",
+  justOne: false,
+});
+
+blogSchema.virtual("comments", {
+  ref: "Comment",
+  localField: "_id",
+  foreignField: "blogId",
+  justOne: false,
+});
+
 const Blog = mongoose.model("Blog", blogSchema);
 
 module.exports = Blog;

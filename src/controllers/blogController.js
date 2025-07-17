@@ -120,7 +120,20 @@ const allBlogs = async (req, res) => {
       .sort({ [sortBy]: sortOrder })
       .skip(page * limit)
       .limit(limit)
-      .populate("files");
+      .populate([
+        {
+          path: "likes",
+          select: "_id blogId",
+        },
+        {
+          path: "files",
+          select: "_id url",
+        },
+        {
+          path: "comments",
+          select: "_id blogId message",
+        },
+      ]);
 
     return res.success("All Blogs", {
       blogs: transformBlogCollection(blogs),

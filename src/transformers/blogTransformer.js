@@ -5,12 +5,29 @@ const transformFile = (file) => {
   };
 };
 
+const transformLike = (like) => {
+  return {
+    id: like._id,
+    blogId: like.blogId,
+  };
+};
+
+const transformComment = (comment) => {
+  return {
+    id: comment._id,
+    blogId: comment.blogId,
+    message: comment.message,
+  };
+};
+
 const transformBlog = (blog) => {
   return {
     id: blog._id,
     title: blog.title,
     description: blog.description,
     files: blog.files.map(transformFile),
+    likes: blog.likes.map(transformLike),
+    comments: blog.comments.map(transformComment),
   };
 };
 
