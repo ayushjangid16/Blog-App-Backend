@@ -4,16 +4,7 @@ const likePost = async (req, res) => {
   try {
     const { id } = req.query;
 
-    if (!id) {
-      return res.error("Blog Id is Missing");
-    }
-
     const userId = req.user._id;
-
-    const alreadyLiked = await Like.findOne({ blogId: id, userId });
-    if (alreadyLiked) {
-      return res.error("Already Liked");
-    }
 
     const likeRecord = await Like.create({
       blogId: id,
@@ -27,7 +18,17 @@ const likePost = async (req, res) => {
 };
 
 const dislikePost = async (req, res) => {
-  res.send("disliked");
+  try {
+    const { id } = req.query;
+
+    const userId = req.user._id;
+
+    await Like.deleteOne({ blogId: id, userId });
+
+    return res.success("Post DisLiked Successfully");
+  } catch (error) {
+    return res.error("Internal Server Error");
+  }
 };
 
 const likeComment = async (req, res) => {
@@ -41,12 +42,6 @@ const dislikeComment = async (req, res) => {
 const allLikesOnPost = async (req, res) => {
   try {
     const { id } = req.query;
-
-    if (!id) {
-      return res.error("Blog Id is Missing");
-    }
-
-    const userId = req.user._id;
 
     const likeCount = await Like.countDocuments({
       blogId: id,

@@ -17,4 +17,12 @@ const authorize = (permission) => {
   };
 };
 
-module.exports = { authorize };
+const isSystemUser = async (req, res, next) => {
+  if (req.user.user_type === "system_user") {
+    return res.error("Invalid Request");
+  }
+
+  next();
+};
+
+module.exports = { authorize, isSystemUser };

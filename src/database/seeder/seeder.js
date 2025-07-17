@@ -111,6 +111,7 @@ const createUsers = async (roles) => {
     isVerified: true,
     phone_number: faker.phone.number().toString(),
     role_id: adminRole._id,
+    user_type: "platform_user",
   };
 
   return User.create(adminUser);

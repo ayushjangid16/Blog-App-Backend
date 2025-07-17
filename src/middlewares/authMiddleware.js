@@ -56,6 +56,7 @@ const authenticate = async (req, res, next) => {
     req.permissions = allPermissions;
     req.role = user.role_id.username;
     req.user = user;
+
     next();
   } catch (error) {
     console.error("Authorization Error:", error);

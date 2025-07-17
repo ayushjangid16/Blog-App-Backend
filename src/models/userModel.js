@@ -51,6 +51,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    user_type: {
+      type: String,
+      enum: ["platform_user", "system_user"],
+      default: "platform_user",
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
