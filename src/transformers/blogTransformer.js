@@ -26,8 +26,8 @@ const transformBlog = (blog) => {
     title: blog.title,
     description: blog.description,
     files: blog.files.map(transformFile),
-    likes: blog.likes.map(transformLike),
-    comments: blog.comments.map(transformComment),
+    likes: blog.likes,
+    comments: blog.comments,
   };
 };
 

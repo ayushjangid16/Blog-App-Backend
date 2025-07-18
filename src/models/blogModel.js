@@ -56,6 +56,7 @@ blogSchema.virtual("likes", {
   localField: "_id",
   foreignField: "blogId",
   justOne: false,
+  count: true,
 });
 
 blogSchema.virtual("comments", {
@@ -63,6 +64,7 @@ blogSchema.virtual("comments", {
   localField: "_id",
   foreignField: "blogId",
   justOne: false,
+  count: true,
 });
 
 const Blog = mongoose.model("Blog", blogSchema);

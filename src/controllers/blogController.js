@@ -7,6 +7,11 @@ const {
 
 const slugify = require("slugify");
 const { deleteFile } = require("../utils/deleteFile");
+const Like = require("../models/likeModel");
+const Comment = require("../models/commentModel");
+const {
+  transformCommentCollection,
+} = require("../transformers/commentTransformer");
 
 const createBlog = async (req, res) => {
   const blogFiles = req.files || [];
@@ -124,6 +129,9 @@ const allBlogs = async (req, res) => {
         {
           path: "likes",
           select: "_id blogId",
+          match: {
+            commentId: null,
+          },
         },
         {
           path: "files",
@@ -164,7 +172,23 @@ const allBlogsOfUser = async (req, res) => {
     const allBlogs = await Blog.find(filter)
       .skip(page * limit)
       .limit(limit)
-      .populate("files");
+      .populate([
+        {
+          path: "likes",
+          select: "_id blogId",
+          match: {
+            commentId: null,
+          },
+        },
+        {
+          path: "files",
+          select: "_id url",
+        },
+        {
+          path: "comments",
+          select: "_id blogId message",
+        },
+      ]);
 
     return res.success("All Blogs", {
       blogs: transformBlogCollection(allBlogs),
@@ -210,13 +234,125 @@ const deleteBlog = async (req, res) => {
 const singleBlog = async (req, res) => {
   try {
     const { id } = req.query;
-    const blog = await Blog.findOne({ _id: id, isDeleted: false }).populate(
-      "files"
-    );
+    const blog = await Blog.findOne({ _id: id, isDeleted: false }).populate([
+      {
+        path: "likes",
+        select: "_id blogId",
+        match: {
+          commentId: null,
+        },
+      },
+      {
+        path: "files",
+        select: "_id url",
+      },
+      {
+        path: "comments",
+        select: "_id blogId message",
+      },
+    ]);
 
     return res.success("Blog Fetched Successfully", transformBlog(blog));
   } catch (error) {
     console.error("Error in fetching blog:", error);
+    return res.error("Internal Server Error");
+  }
+};
+
+// all comments on blog
+const allComments = async (req, res) => {
+  try {
+    let { id, page = 0, limit = 10 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const allComments = await Comment.find({ blogId: id })
+      .sort({ createdAt: -1 })
+      .skip(page * limit)
+      .limit(limit);
+
+    let finalData = [];
+
+    const commentMap = new Map();
+    allComments.forEach((com) => {
+      commentMap.set(com._id.toString(), { ...com.toObject(), replies: [] });
+    });
+
+    commentMap.forEach((comment) => {
+      if (comment.parentId) {
+        const parent = commentMap.get(comment.parentId.toString());
+        if (parent) {
+          parent.replies.push(comment);
+        }
+      } else {
+        finalData.push(comment);
+      }
+    });
+
+    console.log(finalData);
+    const total = await Comment.countDocuments({ blogId: id });
+
+    return res.success(
+      "All Comments Fetched",
+      {
+        comments: transformCommentCollection(finalData),
+      },
+      {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      }
+    );
+  } catch (error) {
+    console.error("Fetch comments error:", error);
+    return res.error("Internal Server Error", 501);
+  }
+};
+
+// to comment on a post
+const comment = async (req, res) => {
+  try {
+    const { message, blogId, parentId } = req.body;
+
+    const commentData = {
+      blogId,
+      userId: req.user._id,
+      message,
+    };
+
+    if (parentId) {
+      commentData.parentId = parentId;
+    }
+
+    const comment = await Comment.create(commentData);
+
+    return res.success("Comment Created Successfully", comment);
+  } catch (error) {
+    console.error("Comment creation error:", error);
+    return res.error("Internal Server Error", 501);
+  }
+};
+
+// to react on a blog
+const react = async (req, res) => {
+  try {
+    const { id, key } = req.query;
+
+    const userId = req.user._id;
+
+    if (key === "like") {
+      const likeRecord = await Like.create({
+        blogId: id,
+        userId,
+      });
+
+      return res.success("Post Liked Successfully");
+    }
+
+    // dislike
+    await Like.deleteOne({ blogId: id, userId });
+    return res.success("Post DisLiked Successfully");
+  } catch (error) {
     return res.error("Internal Server Error");
   }
 };
@@ -228,4 +364,7 @@ module.exports = {
   allBlogs,
   singleBlog,
   allBlogsOfUser,
+  allComments,
+  comment,
+  react,
 };

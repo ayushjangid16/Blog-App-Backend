@@ -1,32 +1,7 @@
 const Comment = require("../models/commentModel");
-const {
-  transformCommentCollection,
-  transformComment,
-} = require("../transformers/commentTransformer");
+const Like = require("../models/likeModel");
 
-const create = async (req, res) => {
-  try {
-    const { message, blogId, parentId } = req.body;
-
-    const commentData = {
-      blogId,
-      userId: req.user._id,
-      message,
-    };
-
-    if (parentId) {
-      commentData.parentId = parentId;
-    }
-
-    const comment = await Comment.create(commentData);
-
-    return res.success("Comment Created Successfully", comment);
-  } catch (error) {
-    console.error("Comment creation error:", error);
-    return res.error("Internal Server Error", 501);
-  }
-};
-
+// update comment
 const update = async (req, res) => {
   try {
     const { message, blogId, commentId } = req.body;
@@ -43,6 +18,7 @@ const update = async (req, res) => {
   }
 };
 
+// remove comment
 const remove = async (req, res) => {
   try {
     const { blogId, commentId } = req.body;
@@ -98,58 +74,36 @@ const remove = async (req, res) => {
   }
 };
 
-// all comments on a post
-const index = async (req, res) => {
+// react on comment
+const react = async (req, res) => {
   try {
-    let { id, page = 0, limit = 10 } = req.query;
-    page = parseInt(page);
-    limit = parseInt(limit);
+    const { commentId, blogId, key } = req.query;
 
-    const allComments = await Comment.find({ blogId: id })
-      .sort({ createdAt: -1 })
-      .skip(page * limit)
-      .limit(limit);
+    if (key == "like") {
+      const likeRecord = await Like.create({
+        blogId,
+        commentId,
+        userId: req.user._id,
+      });
 
-    let finalData = [];
+      return res.success("Comment Liked Successfully");
+    }
 
-    const commentMap = new Map();
-    allComments.forEach((com) => {
-      commentMap.set(com._id.toString(), { ...com.toObject(), replies: [] });
+    // dislike
+    await Like.findOneAndDelete({
+      commentId: commentId,
+      blogId: blogId,
+      userId: req.user._id,
     });
 
-    commentMap.forEach((comment) => {
-      if (comment.parentId) {
-        const parent = commentMap.get(comment.parentId.toString());
-        if (parent) {
-          parent.replies.push(comment);
-        }
-      } else {
-        finalData.push(comment);
-      }
-    });
-
-    const total = await Comment.countDocuments({ blogId: id });
-
-    return res.success(
-      "All Comments Fetched",
-      {
-        comments: transformCommentCollection(finalData),
-      },
-      {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-      }
-    );
+    return res.success("Comment Disliked Successfully");
   } catch (error) {
-    console.error("Fetch comments error:", error);
-    return res.error("Internal Server Error", 501);
+    return res.error("Internal Server Error");
   }
 };
 
 module.exports = {
-  create,
   update,
   remove,
-  index,
+  react,
 };
