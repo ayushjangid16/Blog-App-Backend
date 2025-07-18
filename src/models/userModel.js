@@ -80,8 +80,31 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toObject: {
+      virtuals: true,
+    },
+    toJSON: {
+      virtuals: true,
+    },
+  }
 );
+
+userSchema.virtual("followers", {
+  ref: "Follow",
+  localField: "_id",
+  foreignField: "following_id",
+  justOne: false,
+  count: true,
+});
+userSchema.virtual("following", {
+  ref: "Follow",
+  localField: "_id",
+  foreignField: "follower_id",
+  justOne: false,
+  count: true,
+});
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

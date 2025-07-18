@@ -18,6 +18,6 @@ const followSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const UserConnection = mongoose.model("Follow", followSchema);
+const Follow = mongoose.model("Follow", followSchema);
 
-module.exports = UserConnection;
+module.exports = Follow;

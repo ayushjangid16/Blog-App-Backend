@@ -20,6 +20,13 @@ const transformComment = (comment) => {
   };
 };
 
+const transformUser = (user) => {
+  return {
+    id: user._id,
+    fullname: user.first_name + " " + user.last_name,
+  };
+};
+
 const transformBlog = (blog) => {
   return {
     id: blog._id,
@@ -28,6 +35,7 @@ const transformBlog = (blog) => {
     files: blog.files.map(transformFile),
     likes: blog.likes,
     comments: blog.comments,
+    owner: transformUser(blog.createdBy),
   };
 };
 

@@ -141,6 +141,10 @@ const allBlogs = async (req, res) => {
           path: "comments",
           select: "_id blogId message",
         },
+        {
+          path: "createdBy",
+          select: "_id first_name last_name",
+        },
       ]);
 
     return res.success("All Blogs", {
@@ -250,6 +254,10 @@ const singleBlog = async (req, res) => {
         path: "comments",
         select: "_id blogId message",
       },
+      {
+        path: "createdBy",
+        select: "_id first_name last_name",
+      },
     ]);
 
     return res.success("Blog Fetched Successfully", transformBlog(blog));
@@ -270,7 +278,10 @@ const allComments = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(page * limit)
       .limit(limit)
-      .populate("likes");
+      .populate([
+        { path: "likes" },
+        { path: "userId", select: "first_name last_name" },
+      ]);
 
     let finalData = [];
 
