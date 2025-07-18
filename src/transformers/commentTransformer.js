@@ -6,6 +6,7 @@ const transformComment = (comment) => {
     blogId: comment.blogId,
     parentId: comment.parentId,
     replies: transformCommentCollection(comment.replies) ?? [],
+    likes: comment.likes,
   };
 };
 

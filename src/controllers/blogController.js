@@ -269,7 +269,8 @@ const allComments = async (req, res) => {
     const allComments = await Comment.find({ blogId: id })
       .sort({ createdAt: -1 })
       .skip(page * limit)
-      .limit(limit);
+      .limit(limit)
+      .populate("likes");
 
     let finalData = [];
 
@@ -289,7 +290,6 @@ const allComments = async (req, res) => {
       }
     });
 
-    console.log(finalData);
     const total = await Comment.countDocuments({ blogId: id });
 
     return res.success(
