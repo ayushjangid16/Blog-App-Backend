@@ -67,6 +67,13 @@ blogSchema.virtual("comments", {
   count: true,
 });
 
+blogSchema.virtual("likedByMe", {
+  ref: "Like",
+  localField: "_id",
+  foreignField: "blogId",
+  count: true,
+});
+
 const Blog = mongoose.model("Blog", blogSchema);
 
 module.exports = Blog;

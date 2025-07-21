@@ -41,5 +41,12 @@ commentSchema.virtual("likes", {
   count: true,
 });
 
+commentSchema.virtual("likedByMe", {
+  ref: "Like",
+  localField: "_id",
+  foreignField: "commentId",
+  count: true,
+});
+
 const Comment = mongoose.model("Comment", commentSchema);
 module.exports = Comment;

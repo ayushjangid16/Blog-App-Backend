@@ -1,3 +1,10 @@
+const transformFile = (file) => {
+  return {
+    id: file.id,
+    url: file.url,
+  };
+};
+
 const transformUser = (user) => {
   return {
     id: user._id,
@@ -7,6 +14,7 @@ const transformUser = (user) => {
     email: user.email,
     followers: user.followers,
     following: user.following,
+    avatar_url: user.avatar_url.map(transformFile),
   };
 };
 

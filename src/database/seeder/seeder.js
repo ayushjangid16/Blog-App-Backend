@@ -111,7 +111,7 @@ const createUsers = async (roles) => {
     isVerified: true,
     phone_number: faker.phone.number().toString(),
     role_id: adminRole._id,
-    user_type: "platform_user",
+    user_type: "system_user",
   };
 
   return User.create(adminUser);
@@ -137,10 +137,14 @@ const createRoleWithPermission = async (roles, permissions) => {
   const viewAllBlogsPermission = permissions.find(
     (p) => p.username === "view_all_blogs"
   );
+  const viewBlogPermission = permissions.find(
+    (p) => p.username === "view_blog"
+  );
 
   const userPermissions = [
     { role: userRole._id, permission: requestWriterPermission._id },
     { role: userRole._id, permission: viewAllBlogsPermission._id },
+    { role: userRole._id, permission: viewBlogPermission._id },
   ];
 
   // Writer: Blog permissions only

@@ -36,6 +36,7 @@ const transformBlog = (blog) => {
     likes: blog.likes,
     comments: blog.comments,
     owner: transformUser(blog.createdBy),
+    likedByMe: blog.likedByMe,
   };
 };
 

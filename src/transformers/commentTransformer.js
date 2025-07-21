@@ -1,4 +1,9 @@
-const { transformUser } = require("./userTransformer");
+const transformUser = (user) => {
+  return {
+    id: user._id,
+    fullname: user.first_name + " " + user.last_name,
+  };
+};
 
 const transformComment = (comment) => {
   return {
@@ -7,8 +12,9 @@ const transformComment = (comment) => {
     userId: transformUser(comment.userId),
     blogId: comment.blogId,
     parentId: comment.parentId,
-    replies: transformCommentCollection(comment.replies) ?? [],
     likes: comment.likes,
+    likedByMe: comment.likedByMe,
+    replies: transformCommentCollection(comment.replies) ?? [],
   };
 };
 

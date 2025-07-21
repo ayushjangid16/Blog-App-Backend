@@ -106,5 +106,13 @@ userSchema.virtual("following", {
   count: true,
 });
 
+userSchema.virtual("avatar_url", {
+  ref: "File",
+  localField: "_id",
+  foreignField: "uploadsable_id",
+  justOne: false,
+  match: { uploadsable_type: "User" },
+});
+
 const User = mongoose.model("User", userSchema);
 module.exports = User;

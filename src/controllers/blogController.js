@@ -258,7 +258,17 @@ const singleBlog = async (req, res) => {
         path: "createdBy",
         select: "_id first_name last_name",
       },
+      {
+        path: "likedByMe",
+        match: {
+          userId: req.user._id,
+          commentId: null,
+        },
+      },
     ]);
+
+    const liked = blog.likedByMe > 0;
+    blog.likedByMe = liked;
 
     return res.success("Blog Fetched Successfully", transformBlog(blog));
   } catch (error) {
@@ -279,8 +289,19 @@ const allComments = async (req, res) => {
       .skip(page * limit)
       .limit(limit)
       .populate([
-        { path: "likes" },
-        { path: "userId", select: "first_name last_name" },
+        {
+          path: "likes",
+        },
+        {
+          path: "userId",
+          select: "first_name last_name",
+        },
+        {
+          path: "likedByMe",
+          match: {
+            userId: req.user._id,
+          },
+        },
       ]);
 
     let finalData = [];
