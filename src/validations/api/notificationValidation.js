@@ -3,9 +3,9 @@ const Notification = require("../../models/notificationModel");
 const indexValidation = async (req, res, next) => {
   const userRole = req.role;
 
-  //   if (userRole != "admin") {
-  //     return res.error("Invallid Request");
-  //   }
+  if (userRole != "admin") {
+    return res.error("Invallid Request");
+  }
 
   next();
 };
