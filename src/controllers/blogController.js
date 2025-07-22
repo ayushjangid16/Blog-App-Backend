@@ -12,6 +12,7 @@ const Comment = require("../models/commentModel");
 const {
   transformCommentCollection,
 } = require("../transformers/commentTransformer");
+const { createNotification } = require("../utils/notification");
 
 const createBlog = async (req, res) => {
   const blogFiles = req.files || [];
@@ -358,6 +359,28 @@ const comment = async (req, res) => {
 
     const comment = await Comment.create(commentData);
 
+    const blog = await Blog.findOne({ _id: blogId, isDeleted: false });
+    const blogOwnerId = blog.createdBy;
+
+    let data = {
+      subject: "New comment on your post",
+      message: `User commented on your post.`,
+      type: "Comment Posted",
+      uploadsable_id: comment._id,
+      uploadsable_type: "Comment",
+      sender: req.user._id,
+      recipient: blogOwnerId,
+      deliveryStatus: "sent",
+      deliveredAt: new Date(),
+      isRead: false,
+      isSeen: false,
+    };
+
+    const notify = await createNotification(data);
+    if (!notify) {
+      throw new Error("Error Creation in Notification");
+    }
+
     return res.success("Comment Created Successfully", comment);
   } catch (error) {
     console.error("Comment creation error:", error);
@@ -378,11 +401,33 @@ const react = async (req, res) => {
         userId,
       });
 
+      const blog = await Blog.findOne({ _id: id, isDeleted: false });
+      const blogOwnerId = blog.createdBy;
+
+      let data = {
+        subject: "Your post was liked!",
+        message: `User liked your post.`,
+        type: "Post Like",
+        uploadsable_id: likeRecord._id,
+        uploadsable_type: "Like",
+        sender: userId,
+        recipient: blogOwnerId,
+        deliveryStatus: "sent",
+        deliveredAt: new Date(),
+        isRead: false,
+        isSeen: false,
+      };
+
+      const notify = await createNotification(data);
+      if (!notify) {
+        throw new Error("Error Creation in Notification");
+      }
+
       return res.success("Post Liked Successfully");
     }
 
     // dislike
-    await Like.deleteOne({ blogId: id, userId });
+    await Like.deleteOne({ blogId: id, userId, commentId: null });
     return res.success("Post DisLiked Successfully");
   } catch (error) {
     return res.error("Internal Server Error");

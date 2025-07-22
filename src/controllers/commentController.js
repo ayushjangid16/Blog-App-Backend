@@ -1,5 +1,7 @@
+const Blog = require("../models/blogModel");
 const Comment = require("../models/commentModel");
 const Like = require("../models/likeModel");
+const { createNotification } = require("../utils/notification");
 
 // update comment
 const update = async (req, res) => {
@@ -85,6 +87,27 @@ const react = async (req, res) => {
         commentId,
         userId: req.user._id,
       });
+
+      const commentOwner = await Comment.findOne({ _id: commentId, blogId });
+
+      let data = {
+        subject: "Your comment got a like!",
+        message: `A User liked your comment.`,
+        type: "Comment Like",
+        uploadsable_id: likeRecord._id,
+        uploadsable_type: "Like",
+        sender: req.user._id,
+        recipient: commentOwner.userId,
+        deliveryStatus: "sent",
+        deliveredAt: new Date(),
+        isRead: false,
+        isSeen: false,
+      };
+
+      const notify = await createNotification(data);
+      if (!notify) {
+        throw new Error("Error Creation in Notification");
+      }
 
       return res.success("Comment Liked Successfully");
     }

@@ -29,6 +29,12 @@ const update = async (req, res) => {
 const profilePicture = async (req, res) => {
   const userFile = req.file;
   try {
+    const deleteOld = await File.deleteMany({
+      uploadsable_id: req.user._id,
+      uploadsable_type: "User",
+      type: "User",
+      file_type: "image",
+    });
     const profileImage = await File.create({
       uploadsable_id: req.user._id,
       uploadsable_type: "User",

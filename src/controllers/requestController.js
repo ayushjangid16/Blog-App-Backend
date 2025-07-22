@@ -1,10 +1,13 @@
+const Notification = require("../models/notificationModel");
 const Request = require("../models/requestModel");
 const Role = require("../models/roleModel");
 const User = require("../models/userModel");
+
 const {
   requestApprovedTemplate,
   requestRejectedTemplate,
 } = require("../utils/EmailTemplate");
+const { createNotification } = require("../utils/notification");
 const { sendEmail } = require("../utils/sendEmail");
 
 const createRequest = async (req, res) => {
@@ -16,6 +19,28 @@ const createRequest = async (req, res) => {
       user_id: userId,
       status: "pending",
     });
+
+    const allUsers = await User.find({}).populate("role_id");
+    const admin = allUsers.find((obj) => obj.role_id.username === "admin");
+
+    let data = {
+      subject: "New Writter Request",
+      message: "A new Writter request has been submitted.",
+      type: "Writter",
+      uploadsable_id: requestData._id,
+      uploadsable_type: "Request",
+      sender: userId,
+      recipient: admin._id,
+      deliveryStatus: "sent",
+      deliveredAt: new Date(),
+      isRead: false,
+      isSeen: false,
+    };
+
+    const notify = await createNotification(data);
+    if (!notify) {
+      throw new Error("Notification creation failed.");
+    }
 
     return res.success("Request Created Successfully", requestData);
   } catch (error) {

@@ -7,6 +7,7 @@ const requestRouter = require("./requestRoute");
 const commentRouter = require("./commentRoute");
 const profileRouter = require("./profileRoute");
 const followRouter = require("./followRoute");
+const notificationRouter = require("./notificationRoute");
 
 router.use("/auth", authRouter);
 router.use("/request", requestRouter);
@@ -14,5 +15,6 @@ router.use("/blog", blogRouter);
 router.use("/comment", commentRouter);
 router.use("/profile", profileRouter);
 router.use("", followRouter);
+router.use("/notification", notificationRouter);
 
 module.exports = router;
