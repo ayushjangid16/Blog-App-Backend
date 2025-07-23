@@ -121,5 +121,12 @@ userSchema.virtual("posts", {
   justOne: false,
 });
 
+userSchema.virtual("followedByMe", {
+  ref: "Follow",
+  localField: "_id",
+  foreignField: "follower_id",
+  count: true,
+});
+
 const User = mongoose.model("User", userSchema);
 module.exports = User;

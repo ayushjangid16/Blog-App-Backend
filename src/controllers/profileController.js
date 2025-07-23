@@ -3,7 +3,7 @@ const User = require("../models/userModel");
 const { transformUser } = require("../transformers/userTransformer");
 const { deleteFile } = require("../utils/deleteFile");
 
-// get profile
+// get profile logged in user
 const profile = async (req, res) => {
   try {
     const userId = req.user._id;
