@@ -114,5 +114,12 @@ userSchema.virtual("avatar_url", {
   match: { uploadsable_type: "User" },
 });
 
+userSchema.virtual("posts", {
+  ref: "Blog",
+  localField: "_id",
+  foreignField: "createdBy",
+  justOne: false,
+});
+
 const User = mongoose.model("User", userSchema);
 module.exports = User;

@@ -12,6 +12,12 @@ const profile = async (req, res) => {
       { path: "followers" },
       { path: "following" },
       { path: "avatar_url" },
+      {
+        path: "posts",
+        populate: {
+          path: "files",
+        },
+      },
     ]);
 
     return res.success("User fetched Successfully", transformUser(user));
