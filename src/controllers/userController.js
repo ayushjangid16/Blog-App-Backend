@@ -15,7 +15,6 @@ const userProfile = async (req, res) => {
       {
         path: "followedByMe",
         match: {
-          following_id: id,
           follower_id: req.user._id,
         },
       },

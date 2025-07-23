@@ -30,7 +30,7 @@ const transformUserProfile = (user) => {
     email: user.email,
     followers: user.followers,
     following: user.following,
-    followedByMe: user.followedByMe,
+    followedByMe: user.followedByMe === 1 ? true : false,
     avatar_url: user.avatar_url.map(transformFile),
     posts: transformBlogCollection(user.posts),
   };

@@ -4,10 +4,10 @@ const { createNotification } = require("../utils/notification");
 
 const follow = async (req, res) => {
   try {
-    const { follower, following } = req.body;
+    const { following } = req.body;
 
     const record = await Follow.create({
-      follower_id: follower,
+      follower_id: req.user._id,
       following_id: following,
     });
 
@@ -17,7 +17,7 @@ const follow = async (req, res) => {
       type: "Follow",
       uploadsable_id: record._id,
       uploadsable_type: "Follow",
-      sender: follower,
+      sender: req.user._id,
       recipient: following,
       deliveryStatus: "sent",
       deliveredAt: new Date(),
@@ -38,10 +38,10 @@ const follow = async (req, res) => {
 
 const unfollow = async (req, res) => {
   try {
-    const { follower, following } = req.body;
+    const { following } = req.body;
 
     await Follow.findOneAndDelete({
-      follower_id: follower,
+      follower_id: req.user._id,
       following_id: following,
     });
 

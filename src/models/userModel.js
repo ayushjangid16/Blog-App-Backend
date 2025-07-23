@@ -124,7 +124,7 @@ userSchema.virtual("posts", {
 userSchema.virtual("followedByMe", {
   ref: "Follow",
   localField: "_id",
-  foreignField: "follower_id",
+  foreignField: "following_id",
   count: true,
 });
 

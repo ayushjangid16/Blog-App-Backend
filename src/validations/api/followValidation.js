@@ -3,18 +3,14 @@ const Follow = require("../../models/userConnectionModel");
 
 const followValidation = async (req, res, next) => {
   const schema = zod.object({
-    follower: zod
-      .string()
-      .min(24, "Follower Id Should have atleast 24 Length")
-      .max(24, "Follower Id cannot exceed length of 24"),
     following: zod
       .string()
       .min(24, "Following Id Should have atleast 24 Length")
       .max(24, "Following Id cannot exceed length of 24"),
   });
-  const { follower, following } = req.body;
+  const { following } = req.body;
 
-  const result = schema.safeParse({ follower, following });
+  const result = schema.safeParse({ following });
   const error = {};
 
   if (!result.success) {
@@ -24,12 +20,12 @@ const followValidation = async (req, res, next) => {
     return res.error("Validation Error", 400, error);
   }
 
-  if (follower === following) {
+  if (req.user._id === following) {
     return res.error("Invalid Request");
   }
 
   const exists = await Follow.findOne({
-    follower_id: follower,
+    follower_id: req.user._id,
     following_id: following,
   });
 
@@ -42,18 +38,14 @@ const followValidation = async (req, res, next) => {
 
 const unfollowValidation = async (req, res, next) => {
   const schema = zod.object({
-    follower: zod
-      .string()
-      .min(24, "Follower Id Should have atleast 24 Length")
-      .max(24, "Follower Id cannot exceed length of 24"),
     following: zod
       .string()
       .min(24, "Following Id Should have atleast 24 Length")
       .max(24, "Following Id cannot exceed length of 24"),
   });
-  const { follower, following } = req.body;
+  const { following } = req.body;
 
-  const result = schema.safeParse({ follower, following });
+  const result = schema.safeParse({ following });
   const error = {};
 
   if (!result.success) {
@@ -64,7 +56,7 @@ const unfollowValidation = async (req, res, next) => {
   }
 
   const record = await Follow.findOne({
-    follower_id: follower,
+    follower_id: req.user._id,
     following_id: following,
   });
 
