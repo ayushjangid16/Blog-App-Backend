@@ -6,24 +6,29 @@ const { deleteFile } = require("../utils/deleteFile");
 // get profile logged in user
 const profile = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user?._id;
+    const role = req.role;
 
-    const user = await User.findOne({ _id: userId }).populate([
-      { path: "followers" },
-      { path: "following" },
-      { path: "avatar_url" },
-      {
-        path: "posts",
-        populate: {
-          path: "files",
+    const baseQuery = User.findOne({ _id: userId, isDeleted: false });
+
+    if (role === "writter") {
+      baseQuery.populate([
+        { path: "followers" },
+        { path: "following" },
+        { path: "avatar_url" },
+        {
+          path: "posts",
+          populate: { path: "files" },
         },
-      },
-    ]);
+      ]);
+    }
 
-    return res.success("User fetched Successfully", transformUser(user));
+    const user = await baseQuery.exec();
+
+    return res.success("User fetched successfully", transformUser(user));
   } catch (error) {
-    console.log(error);
-    return res.error("Internal Server Error", 501);
+    console.error("Error fetching profile:", error);
+    return res.error("Internal Server Error", 500);
   }
 };
 
